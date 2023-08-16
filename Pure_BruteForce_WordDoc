@@ -1,0 +1,40 @@
+#!pip install msoffcrypto-tool
+
+import msoffcrypto
+import string
+import sys
+
+PASSWORDS_FILE = open("./Sec.docx", "rb")
+
+letters = list(string.ascii_letters)
+nonchars = ["!", "#", "%", "&", "*", "(", ")", "1", "2", "3", "4", "5", "6", "7", "8", "9", "0", '[', ']', '+', '=']
+characters = letters + nonchars
+STARTING_LENGTH = 5
+MAX_LENGTH = 12
+
+for length in range(STARTING_LENGTH, MAX_LENGTH + 1):
+    for i in range(length**len(characters)):
+        attempt = ''
+        for j in range(length):
+            attempt = characters[i // (len(characters)**j) % len(characters)] + attempt
+            try:
+                file = msoffcrypto.OfficeFile(PASSWORDS_FILE)
+                file.load_key(password=attempt)
+
+                sys.stdout.write("\rPassword: " + attempt)
+                sys.stdout.flush()
+                
+                with open("decrypted.docx", "wb") as f:
+                    file.decrypt(f)
+
+                print("")
+                print(f"Password found: {attempt}")
+                PASSWORDS_FILE.close()
+                break
+
+            except Exception as e:
+                continue
+        
+    if PASSWORDS_FILE.closed:
+        PASSWORDS_FILE.close()
+        break
